@@ -108,10 +108,16 @@ int tuyaAPI::send(unsigned char* buffer, const unsigned int size)
 int tuyaAPI::receive(unsigned char* buffer, const unsigned int maxsize, const unsigned int minsize)
 {
 	unsigned int numbytes = (unsigned int)read(m_sockfd, buffer, maxsize);
-	while (numbytes <= minsize)
+	
+	// Handle empty ack responses - device sends ack first, then actual data
+	// Empty ack is typically 40 bytes (0x28) with cmd=13 (TUYA_CONTROL_NEW)
+	// Retry up to 5 times if we get a small response
+	int retries = 0;
+	while (numbytes > 0 && numbytes <= minsize && retries < 5)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		numbytes = (unsigned int)read(m_sockfd, buffer, maxsize);
+		retries++;
 	}
 	return (int)numbytes;
 }
