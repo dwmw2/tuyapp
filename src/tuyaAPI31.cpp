@@ -47,7 +47,7 @@
 #ifdef DEBUG
 #include <iostream>
 
-void exit_error(const char *msg)
+static void exit_error(const char *msg)
 {
 	perror(msg);
 	exit(0);
