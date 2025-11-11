@@ -203,7 +203,9 @@ int main(int argc, char *argv[])
 	std::cout << "building switch payload: " << payload << "\n";
 #endif
 
-	payload_len = tuyaclient->BuildTuyaMessage(message_buffer, TUYA_CONTROL, payload, device_key);
+	payload_len = tuyaclient->BuildTuyaMessage(message_buffer, 
+		(tuyaclient->getProtocol() == tuyaAPI::Protocol::v34) ? TUYA_CONTROL_NEW : TUYA_CONTROL, 
+		payload, device_key);
 
 #ifdef DEBUG
 		std::cout << "sending message: ";
