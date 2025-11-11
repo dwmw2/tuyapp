@@ -172,14 +172,14 @@ int main(int argc, char *argv[])
 
 
 	ss_payload.str(std::string());
-	ss_payload << "{\"devId\":\"" << device_id << "\",\"uid\":\"" << device_id << "\",\"dps\":{\"1\":";
+	ss_payload << "{\"protocol\":5,\"t\":" << currenttime << ",\"data\":{\"dps\":{\"1\":";
 	if (switchstate)
 		ss_payload << "true";
 	else
 		ss_payload << "false";
 	if (countdown)
 		ss_payload << ",\"9\":" << countdown;
-	ss_payload <<  "},\"t\":\"" << currenttime << "\"}";
+	ss_payload <<  "}}}";
 	payload = ss_payload.str();
 
 #ifdef DEBUG
