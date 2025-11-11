@@ -63,21 +63,29 @@
 
 #include <string>
 #include <cstdint>
+#include <netinet/in.h>
 
 class tuyaAPI
 {
 public:
-	virtual ~tuyaAPI() {}
+	tuyaAPI();
+	virtual ~tuyaAPI();
 
 	static tuyaAPI* create(const std::string &version);
 
+	// Protocol-specific methods (pure virtual)
 	virtual int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload, const std::string &encryption_key) = 0;
 	virtual std::string DecodeTuyaMessage(unsigned char* buffer, const int size, const std::string &encryption_key) = 0;
 
-	virtual bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5) = 0;
-	virtual int send(unsigned char* buffer, const unsigned int size) = 0;
-	virtual int receive(unsigned char* buffer, const unsigned int maxsize, const unsigned int minsize = 28) = 0;
-	virtual void disconnect() = 0;
+	// Network methods (common implementation, ConnectToDevice virtual for protocol 3.4)
+	virtual bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5);
+	int send(unsigned char* buffer, const unsigned int size);
+	int receive(unsigned char* buffer, const unsigned int maxsize, const unsigned int minsize = 28);
+	void disconnect();
+
+protected:
+	int m_sockfd;
+	bool ResolveHost(const std::string &hostname, struct sockaddr_in& serv_addr);
 };
 
 #endif
