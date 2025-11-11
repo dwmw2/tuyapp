@@ -172,14 +172,31 @@ int main(int argc, char *argv[])
 
 
 	ss_payload.str(std::string());
-	ss_payload << "{\"protocol\":5,\"t\":" << currenttime << ",\"data\":{\"dps\":{\"1\":";
-	if (switchstate)
-		ss_payload << "true";
+
+	// Protocol 3.4 uses different payload format
+	if (tuyaclient->getProtocol() == tuyaAPI::Protocol::v34)
+	{
+		ss_payload << "{\"protocol\":5,\"t\":" << currenttime << ",\"data\":{\"dps\":{\"1\":";
+		if (switchstate)
+			ss_payload << "true";
+		else
+			ss_payload << "false";
+		if (countdown)
+			ss_payload << ",\"9\":" << countdown;
+		ss_payload <<  "}}}";
+	}
 	else
-		ss_payload << "false";
-	if (countdown)
-		ss_payload << ",\"9\":" << countdown;
-	ss_payload <<  "}}}";
+	{
+		// Protocol 3.3 and earlier use devId/uid format
+		ss_payload << "{\"devId\":\"" << device_id << "\",\"uid\":\"" << device_id << "\",\"dps\":{\"1\":";
+		if (switchstate)
+			ss_payload << "true";
+		else
+			ss_payload << "false";
+		if (countdown)
+			ss_payload << ",\"9\":" << countdown;
+		ss_payload <<  "},\"t\":\"" << currenttime << "\"}";
+	}
 	payload = ss_payload.str();
 
 #ifdef DEBUG

@@ -53,6 +53,7 @@ void exit_error(const char *msg)
 
 tuyaAPI33::tuyaAPI33()
 {
+	m_protocol = Protocol::v33;
 }
 
 tuyaAPI33::~tuyaAPI33()

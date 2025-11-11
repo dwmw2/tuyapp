@@ -67,9 +67,18 @@
 class tuyaAPI
 {
 public:
+	enum class Protocol {
+		v31,
+		v33,
+		v34
+	};
+
 	virtual ~tuyaAPI() {}
 
 	static tuyaAPI* create(const std::string &version);
+
+	// Get protocol version
+	Protocol getProtocol() const { return m_protocol; }
 
 	virtual int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload, const std::string &encryption_key) = 0;
 	virtual std::string DecodeTuyaMessage(unsigned char* buffer, const int size, const std::string &encryption_key) = 0;
@@ -78,6 +87,9 @@ public:
 	virtual int send(unsigned char* buffer, const unsigned int size) = 0;
 	virtual int receive(unsigned char* buffer, const unsigned int maxsize, const unsigned int minsize = 28) = 0;
 	virtual void disconnect() = 0;
+
+protected:
+	Protocol m_protocol;
 };
 
 #endif

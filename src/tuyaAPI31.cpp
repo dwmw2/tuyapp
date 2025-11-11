@@ -56,6 +56,7 @@ void exit_error(const char *msg)
 
 tuyaAPI31::tuyaAPI31()
 {
+	m_protocol = Protocol::v31;
 }
 
 tuyaAPI31::~tuyaAPI31()
