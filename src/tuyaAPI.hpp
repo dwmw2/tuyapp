@@ -68,10 +68,19 @@
 class tuyaAPI
 {
 public:
+	enum class Protocol {
+		v31,
+		v33,
+		v34
+	};
+
 	tuyaAPI();
 	virtual ~tuyaAPI();
 
 	static tuyaAPI* create(const std::string &version);
+
+	// Get protocol version
+	Protocol getProtocol() const { return m_protocol; }
 
 	// Protocol-specific methods (pure virtual)
 	virtual int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload, const std::string &encryption_key) = 0;
@@ -85,6 +94,7 @@ public:
 
 protected:
 	int m_sockfd;
+	Protocol m_protocol;
 	bool ResolveHost(const std::string &hostname, struct sockaddr_in& serv_addr);
 };
 
