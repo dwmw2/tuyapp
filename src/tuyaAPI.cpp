@@ -133,5 +133,31 @@ void tuyaAPI::disconnect()
 bool tuyaAPI::NegotiateSession(const std::string &local_key)
 {
 	m_encryption_key = local_key;
+	m_session_established = false;
+
+	unsigned char send_buffer[1024];
+	unsigned char recv_buffer[1024];
+
+	while (!m_session_established)
+	{
+		int packet_size = GetNextSessionPacket(send_buffer);
+		if (packet_size < 0)
+			return false;
+		if (packet_size == 0)
+			break;
+
+		if (send(send_buffer, packet_size) < 0)
+			return false;
+
+		if (m_session_established)
+			break;
+
+		int recv_size = receive(recv_buffer, sizeof(recv_buffer), 0);
+		if (recv_size < 0)
+			return false;
+
+		StoreSessionResponse(recv_buffer, recv_size);
+	}
+
 	return true;
 }

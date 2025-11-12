@@ -89,6 +89,8 @@ public:
 	// Network methods (common implementation, ConnectToDevice virtual for protocol 3.4)
 	virtual bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5);
 	virtual bool NegotiateSession(const std::string &local_key);
+	virtual int GetNextSessionPacket(unsigned char *buffer) { m_session_established = true; return 0; }
+	virtual void StoreSessionResponse(unsigned char *buffer, int size) {}
 	int send(unsigned char* buffer, const unsigned int size);
 	int receive(unsigned char* buffer, const unsigned int maxsize, const unsigned int minsize = 28);
 	void disconnect();

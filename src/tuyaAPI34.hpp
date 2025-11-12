@@ -30,12 +30,16 @@ public:
 
 	bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5) override;
 	bool NegotiateSession(const std::string &local_key) override;
+	int GetNextSessionPacket(unsigned char *buffer) override;
+	void StoreSessionResponse(unsigned char *buffer, int size) override;
 
 private:
 	unsigned char m_session_key[16];
 	unsigned char m_local_nonce[16];
 	unsigned char m_remote_nonce[16];
 	uint32_t m_seqno;
+	unsigned char m_last_response[1024];
+	int m_last_response_size;
 
 	int BuildSessionMessage(unsigned char *buffer, const uint8_t command, const std::string &payload, const std::string &encryption_key);
 	std::string DecodeSessionMessage(unsigned char* buffer, const int size, const std::string &encryption_key);
