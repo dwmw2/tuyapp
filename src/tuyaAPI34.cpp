@@ -15,6 +15,7 @@
 #include <netdb.h>
 #include <zlib.h>
 #include <sstream>
+#include <iostream>
 #include <thread>
 #include <chrono>
 #include <cstring>
@@ -309,80 +310,81 @@ int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	return buffersize;
 }
 
-
-std::string tuyaAPI34::DecodeTuyaMessage(unsigned char* buffer, const int size)
+int tuyaAPI34::DecodeOneMessage(unsigned char* buffer, const int size, std::string &result)
 {
 	if (!m_session_established)
-		return "{\"msg\":\"session not established\"}";
-
-	std::string result;
-	int bufferpos = 0;
-
-	while (bufferpos < size)
 	{
-		unsigned char* cTuyaResponse = &buffer[bufferpos];
-		int messageSize = (int)((uint8_t)cTuyaResponse[15] + ((uint8_t)cTuyaResponse[14] << 8) + PROTOCOL_34_HEADER_SIZE);
-		int retcode = (int)((uint8_t)cTuyaResponse[19] + ((uint8_t)cTuyaResponse[18] << 8));
-
-		if (retcode != 0)
-		{
-			char cErrorMessage[50];
-			sprintf(cErrorMessage, "{\"msg\":\"device returned error %d\"}", retcode);
-			result.append(cErrorMessage);
-			bufferpos += messageSize;
-			continue;
-		}
-
-		// For v3.4, verify HMAC instead of CRC
-		unsigned char hmac_sent[32];
-		memcpy(hmac_sent, &cTuyaResponse[messageSize - 36], 32);
-
-		unsigned char hmac_calc[32];
-		unsigned int hmac_len;
-		HMAC(EVP_sha256(), m_session_key, 16, cTuyaResponse, messageSize - 36, hmac_calc, &hmac_len);
-
-		if (memcmp(hmac_sent, hmac_calc, 32) == 0)
-		{
-			unsigned char *cEncryptedPayload = &cTuyaResponse[PROTOCOL_34_HEADER_SIZE + sizeof(retcode)];
-			int payloadSize = (int)(messageSize - PROTOCOL_34_HEADER_SIZE - sizeof(retcode) - 36);  // 36 = 32 HMAC + 4 suffix
-
-			unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
-			memset(cDecryptedPayload, 0, payloadSize + 16);
-			int decryptedSize = 0;
-			int decryptedChars = 0;
-
-			EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-			EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
-			EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-			decryptedSize = decryptedChars;
-			EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-			decryptedSize += decryptedChars;
-			EVP_CIPHER_CTX_free(ctx);
-
-			// Strip protocol version header (e.g., "3.4" followed by binary data)
-			// Look for the start of JSON data
-			int json_start = 0;
-			for (int i = 0; i < decryptedSize - 1; i++)
-			{
-				if (cDecryptedPayload[i] == '{')
-				{
-					json_start = i;
-					break;
-				}
-			}
-
-			result.append((char*)cDecryptedPayload + json_start, decryptedSize - json_start);
-
-			delete[] cDecryptedPayload;
-		}
-		else
-			result.append("{\"msg\":\"crc error\"}");
-
-		bufferpos += messageSize;
+		result = "{\"msg\":\"session not established\"}";
+		return -1;
 	}
-	return result;
-}
 
+	// Need at least header to determine message size
+	if (size < PROTOCOL_34_HEADER_SIZE)
+		return 0;
+
+	int messageSize = (int)((uint8_t)buffer[15] + ((uint8_t)buffer[14] << 8) + PROTOCOL_34_HEADER_SIZE);
+
+	// Check if we have the complete message
+	if (size < messageSize)
+		return 0;
+
+	int retcode = (int)((uint8_t)buffer[19] + ((uint8_t)buffer[18] << 8));
+
+	if (retcode != 0)
+	{
+		char cErrorMessage[50];
+		sprintf(cErrorMessage, "{\"msg\":\"device returned error %d\"}", retcode);
+		result = cErrorMessage;
+		return messageSize;
+	}
+
+	// Verify HMAC
+	unsigned char hmac_sent[32];
+	memcpy(hmac_sent, &buffer[messageSize - 36], 32);
+
+	unsigned char hmac_calc[32];
+	unsigned int hmac_len;
+	HMAC(EVP_sha256(), m_session_key, 16, buffer, messageSize - 36, hmac_calc, &hmac_len);
+
+	if (memcmp(hmac_sent, hmac_calc, 32) != 0)
+	{
+		result = "{\"msg\":\"crc error\"}";
+		return messageSize;
+	}
+
+	unsigned char *cEncryptedPayload = &buffer[PROTOCOL_34_HEADER_SIZE + sizeof(retcode)];
+	int payloadSize = (int)(messageSize - PROTOCOL_34_HEADER_SIZE - sizeof(retcode) - 36);
+
+	unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
+	memset(cDecryptedPayload, 0, payloadSize + 16);
+	int decryptedSize = 0;
+	int decryptedChars = 0;
+
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
+	EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
+	decryptedSize = decryptedChars;
+	EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
+	decryptedSize += decryptedChars;
+	EVP_CIPHER_CTX_free(ctx);
+
+	// Strip protocol version header (e.g., "3.4" followed by binary data)
+	// Look for the start of JSON data
+	int json_start = 0;
+	for (int i = 0; i < decryptedSize - 1; i++)
+	{
+		if (cDecryptedPayload[i] == '{')
+		{
+			json_start = i;
+			break;
+		}
+	}
+
+	result.append((char*)cDecryptedPayload + json_start, decryptedSize - json_start);
+	delete[] cDecryptedPayload;
+
+	return messageSize;
+}
 
 
 bool tuyaAPI34::ConnectToDevice(const std::string &hostname, const int portnumber, uint8_t retries)

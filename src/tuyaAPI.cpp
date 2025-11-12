@@ -27,7 +27,7 @@
 #define SOCKET_TIMEOUT_SECS 5
 #endif
 
-tuyaAPI::tuyaAPI() : m_sockfd(0), m_session_established(false)
+tuyaAPI::tuyaAPI() : m_sockfd(0), m_session_established(false), m_recv_buffer_len(0)
 {
 }
 
@@ -128,6 +128,48 @@ void tuyaAPI::disconnect()
 {
 	close(m_sockfd);
 	m_sockfd = 0;
+}
+
+std::string tuyaAPI::DecodeTuyaMessage(unsigned char* buffer, const int size)
+{
+	// Append new data to receive buffer
+	if (m_recv_buffer_len + size > sizeof(m_recv_buffer))
+		return "{\"msg\":\"receive buffer overflow\"}";
+
+	memcpy(m_recv_buffer + m_recv_buffer_len, buffer, size);
+	m_recv_buffer_len += size;
+
+	std::string result;
+
+	// Process complete messages from buffer
+	while (m_recv_buffer_len > 0)
+	{
+		std::string msg_result;
+		int consumed = DecodeOneMessage(m_recv_buffer, m_recv_buffer_len, msg_result);
+
+		if (consumed < 0)
+		{
+			// Error - clear buffer and return error
+			m_recv_buffer_len = 0;
+			return msg_result;
+		}
+
+		if (consumed == 0)
+		{
+			// Need more data
+			break;
+		}
+
+		// Append decoded message
+		result.append(msg_result);
+
+		// Remove consumed bytes from buffer
+		m_recv_buffer_len -= consumed;
+		if (m_recv_buffer_len > 0)
+			memmove(m_recv_buffer, m_recv_buffer + consumed, m_recv_buffer_len);
+	}
+
+	return result;
 }
 
 bool tuyaAPI::NegotiateSession(const std::string &local_key)

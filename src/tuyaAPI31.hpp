@@ -26,7 +26,7 @@ public:
 	~tuyaAPI31();
 
 	int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload) override;
-	std::string DecodeTuyaMessage(unsigned char* buffer, const int size) override;
+	int DecodeOneMessage(unsigned char* buffer, const int size, std::string &result) override;
 
 private:
 	int encode_base64( const unsigned char *input_str, int input_size, unsigned char *output_str);

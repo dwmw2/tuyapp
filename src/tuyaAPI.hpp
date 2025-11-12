@@ -84,7 +84,8 @@ public:
 
 	// Protocol-specific methods (pure virtual)
 	virtual int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload) = 0;
-	virtual std::string DecodeTuyaMessage(unsigned char* buffer, const int size) = 0;
+	virtual int DecodeOneMessage(unsigned char* buffer, const int size, std::string &result) = 0;
+	std::string DecodeTuyaMessage(unsigned char* buffer, const int size);
 
 	// Network methods (common implementation, ConnectToDevice virtual for protocol 3.4)
 	virtual bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5);
@@ -100,6 +101,8 @@ protected:
 	Protocol m_protocol;
 	std::string m_encryption_key;
 	bool m_session_established;
+	unsigned char m_recv_buffer[4096];
+	int m_recv_buffer_len;
 	bool ResolveHost(const std::string &hostname, struct sockaddr_in& serv_addr);
 };
 

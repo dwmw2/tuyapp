@@ -16,6 +16,7 @@
 #include <zlib.h>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 #include <thread>
 #include <chrono>
 #include <cstring>
@@ -149,47 +150,45 @@ int tuyaAPI31::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	return buffersize;
 }
 
-
-std::string tuyaAPI31::DecodeTuyaMessage(unsigned char* buffer, const int size)
+int tuyaAPI31::DecodeOneMessage(unsigned char* buffer, const int size, std::string &result)
 {
-	std::string result;
+	// Need at least header to determine message size
+	if (size < PROTOCOL_31_HEADER_SIZE)
+		return 0;
 
-	int bufferpos = 0;
+	int messageSize = (int)((uint8_t)buffer[15] + ((uint8_t)buffer[14] << 8) + PROTOCOL_31_HEADER_SIZE);
 
-	while (bufferpos < size)
+	// Check if we have the complete message
+	if (size < messageSize)
+		return 0;
+
+	int retcode = (int)((uint8_t)buffer[19] + ((uint8_t)buffer[18] << 8));
+
+	if (retcode != 0)
 	{
-		unsigned char* cTuyaResponse = &buffer[bufferpos];
-		int messageSize = (int)((uint8_t)cTuyaResponse[15] + ((uint8_t)cTuyaResponse[14] << 8) + PROTOCOL_31_HEADER_SIZE);
-		int retcode = (int)((uint8_t)cTuyaResponse[19] + ((uint8_t)cTuyaResponse[18] << 8));
-
-		if (retcode != 0)
-		{
-			char cErrorMessage[50];
-			sprintf(cErrorMessage, "{\"msg\":\"device returned error %d\"}", retcode);
-			result.append(cErrorMessage);
-			bufferpos += messageSize;
-			continue;
-		}
-
-
-		// verify crc
-		unsigned int crc_sent = ((uint8_t)cTuyaResponse[messageSize - 8] << 24) + ((uint8_t)cTuyaResponse[messageSize - 7] << 16) + ((uint8_t)cTuyaResponse[messageSize - 6] << 8) + (uint8_t)cTuyaResponse[messageSize - 5];
-		unsigned int crc = crc32(0L, Z_NULL, 0) & 0xFFFFFFFF;
-		crc = crc32(crc, cTuyaResponse, messageSize - 8) & 0xFFFFFFFF;
-
-		if (crc == crc_sent)
-		{
-			unsigned char *cPayload = &cTuyaResponse[PROTOCOL_31_HEADER_SIZE + sizeof(retcode)];
-			int payloadSize = (int)(messageSize - PROTOCOL_31_HEADER_SIZE - sizeof(retcode) - MESSAGE_TRAILER_SIZE);
-
-			result.append((const char *)cPayload, payloadSize + 1);
-		}
-		else
-			result.append("{\"msg\":\"crc error\"}");
-
-		bufferpos += messageSize;
+		char cErrorMessage[50];
+		sprintf(cErrorMessage, "{\"msg\":\"device returned error %d\"}", retcode);
+		result = cErrorMessage;
+		return messageSize;
 	}
-	return result;
+
+	// Verify CRC
+	unsigned int crc_sent = ((uint8_t)buffer[messageSize - 8] << 24) + ((uint8_t)buffer[messageSize - 7] << 16) + ((uint8_t)buffer[messageSize - 6] << 8) + (uint8_t)buffer[messageSize - 5];
+	unsigned int crc = crc32(0L, Z_NULL, 0) & 0xFFFFFFFF;
+	crc = crc32(crc, buffer, messageSize - 8) & 0xFFFFFFFF;
+
+	if (crc != crc_sent)
+	{
+		result = "{\"msg\":\"crc error\"}";
+		return messageSize;
+	}
+
+	unsigned char *cPayload = &buffer[PROTOCOL_31_HEADER_SIZE + sizeof(retcode)];
+	int payloadSize = (int)(messageSize - PROTOCOL_31_HEADER_SIZE - sizeof(retcode) - MESSAGE_TRAILER_SIZE);
+
+	result.append((const char *)cPayload, payloadSize + 1);
+
+	return messageSize;
 }
 
 

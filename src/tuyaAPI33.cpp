@@ -15,6 +15,7 @@
 #include <netdb.h>
 #include <zlib.h>
 #include <sstream>
+#include <iostream>
 #include <thread>
 #include <chrono>
 #include <cstring>
@@ -128,65 +129,59 @@ int tuyaAPI33::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	return buffersize;
 }
 
-
-std::string tuyaAPI33::DecodeTuyaMessage(unsigned char* buffer, const int size)
+int tuyaAPI33::DecodeOneMessage(unsigned char* buffer, const int size, std::string &result)
 {
-	std::string result;
+	// Need at least header to determine message size
+	if (size < PROTOCOL_33_HEADER_SIZE)
+		return 0;
 
-	int bufferpos = 0;
+	int messageSize = (int)((uint8_t)buffer[15] + ((uint8_t)buffer[14] << 8) + PROTOCOL_33_HEADER_SIZE);
 
-	while (bufferpos < size)
+	// Check if we have the complete message
+	if (size < messageSize)
+		return 0;
+
+	int retcode = (int)((uint8_t)buffer[19] + ((uint8_t)buffer[18] << 8));
+
+	if (retcode != 0)
 	{
-		unsigned char* cTuyaResponse = &buffer[bufferpos];
-		int messageSize = (int)((uint8_t)cTuyaResponse[15] + ((uint8_t)cTuyaResponse[14] << 8) + PROTOCOL_33_HEADER_SIZE);
-		int retcode = (int)((uint8_t)cTuyaResponse[19] + ((uint8_t)cTuyaResponse[18] << 8));
-
-		if (retcode != 0)
-		{
-			char cErrorMessage[50];
-			sprintf(cErrorMessage, "{\"msg\":\"device returned error %d\"}", retcode);
-			result.append(cErrorMessage);
-			bufferpos += messageSize;
-			continue;
-		}
-
-
-		// verify crc
-		unsigned int crc_sent = ((uint8_t)cTuyaResponse[messageSize - 8] << 24) + ((uint8_t)cTuyaResponse[messageSize - 7] << 16) + ((uint8_t)cTuyaResponse[messageSize - 6] << 8) + (uint8_t)cTuyaResponse[messageSize - 5];
-		unsigned int crc = crc32(0L, Z_NULL, 0) & 0xFFFFFFFF;
-		crc = crc32(crc, cTuyaResponse, messageSize - 8) & 0xFFFFFFFF;
-
-		if (crc == crc_sent)
-		{
-			unsigned char *cEncryptedPayload = &cTuyaResponse[PROTOCOL_33_HEADER_SIZE + sizeof(retcode)];
-			int payloadSize = (int)(messageSize - PROTOCOL_33_HEADER_SIZE - sizeof(retcode) - MESSAGE_TRAILER_SIZE);
-			// test for presence of secondary protocol 3.3 header (odd message size)
-			if ((cTuyaResponse[15] & 0x1) && (cEncryptedPayload[0] == '3') && (cEncryptedPayload[1] == '.') && (cEncryptedPayload[2] == '3'))
-			{
-				cEncryptedPayload += 15;
-				payloadSize -= 15;
-			}
-
-			unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
-			memset(cDecryptedPayload, 0, payloadSize + 16);
-			int decryptedSize = 0;
-			int decryptedChars = 0;
-
-			EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-			EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)m_encryption_key.c_str(), nullptr);
-			EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-			decryptedSize = decryptedChars;
-			EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-			decryptedSize += decryptedChars;
-			EVP_CIPHER_CTX_free(ctx);
-			result.append((char*)cDecryptedPayload);
-		}
-		else
-			result.append("{\"msg\":\"crc error\"}");
-
-		bufferpos += messageSize;
+		char cErrorMessage[50];
+		sprintf(cErrorMessage, "{\"msg\":\"device returned error %d\"}", retcode);
+		result = cErrorMessage;
+		return messageSize;
 	}
-	return result;
+
+	unsigned int crc_sent = ((uint8_t)buffer[messageSize - 8] << 24) + ((uint8_t)buffer[messageSize - 7] << 16) + ((uint8_t)buffer[messageSize - 6] << 8) + (uint8_t)buffer[messageSize - 5];
+	unsigned int crc = crc32(0L, Z_NULL, 0) & 0xFFFFFFFF;
+	crc = crc32(crc, buffer, messageSize - 8) & 0xFFFFFFFF;
+
+	if (crc_sent != crc)
+	{
+		result = "{\"msg\":\"crc error\"}";
+		return messageSize;
+	}
+
+	unsigned char *cEncryptedPayload = &buffer[PROTOCOL_33_HEADER_SIZE + sizeof(retcode)];
+	int payloadSize = (int)(messageSize - PROTOCOL_33_HEADER_SIZE - sizeof(retcode) - 8);
+
+	unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
+	memset(cDecryptedPayload, 0, payloadSize + 16);
+	int decryptedSize = 0;
+	int decryptedChars = 0;
+
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)m_encryption_key.c_str(), nullptr);
+	EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
+	decryptedSize = decryptedChars;
+	EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
+	decryptedSize += decryptedChars;
+	EVP_CIPHER_CTX_free(ctx);
+	result.append((char*)cDecryptedPayload);
+	delete[] cDecryptedPayload;
+
+	return messageSize;
 }
+
+
 
 
