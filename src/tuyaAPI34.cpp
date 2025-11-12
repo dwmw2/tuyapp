@@ -45,7 +45,6 @@
 tuyaAPI34::tuyaAPI34()
 {
 	m_protocol = Protocol::v34;
-	m_session_established = false;
 	m_seqno = 0;
 }
 
@@ -293,10 +292,7 @@ bool tuyaAPI34::NegotiateSession(const std::string &local_key)
 int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &szPayload, const std::string &encryption_key)
 {
 	if (!m_session_established)
-	{
-		if (!NegotiateSession(encryption_key))
-			return -1;
-	}
+		return -1;
 
 	m_seqno++;
 

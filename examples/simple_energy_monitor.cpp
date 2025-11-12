@@ -48,6 +48,9 @@ int main(int argc, char *argv[])
 
 	std::string device_id = std::string(argv[2]);
 	std::string device_key = std::string(argv[3]);
+	
+	if (!tuyaclient->NegotiateSession(device_key))
+		c_error("ERROR negotiating session");
 	std::stringstream ss_payload;
 	long currenttime = time(NULL) ;
 	ss_payload << "{\"gwId\":\"" << device_id << "\",\"devId\":\"" << device_id << "\",\"uid\":\"" << device_id << "\",\"t\":\"" << currenttime << "\"}";

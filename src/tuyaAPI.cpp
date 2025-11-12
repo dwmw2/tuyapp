@@ -27,7 +27,7 @@
 #define SOCKET_TIMEOUT_SECS 5
 #endif
 
-tuyaAPI::tuyaAPI() : m_sockfd(0)
+tuyaAPI::tuyaAPI() : m_sockfd(0), m_session_established(false)
 {
 }
 
@@ -128,4 +128,9 @@ void tuyaAPI::disconnect()
 {
 	close(m_sockfd);
 	m_sockfd = 0;
+}
+
+bool tuyaAPI::NegotiateSession(const std::string &local_key)
+{
+	return true;
 }

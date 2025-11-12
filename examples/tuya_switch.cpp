@@ -119,6 +119,9 @@ int main(int argc, char *argv[])
 	if (!tuyaclient->ConnectToDevice(device_address, TUYA_COMMAND_PORT))
 		error("ERROR connecting");
 
+	if (!tuyaclient->NegotiateSession(device_key))
+		error("ERROR negotiating session");
+
 	std::string s_switchstate = std::string(argv[2]);
 	int countdown = 0;
 	if (argc > 3)

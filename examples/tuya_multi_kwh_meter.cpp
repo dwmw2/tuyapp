@@ -109,6 +109,14 @@ bool monitor(std::string devicename)
 		return false;
 	}
 
+	if (!tuyaclient->NegotiateSession(device_key))
+	{
+		writeprotect.lock();
+		std::cout << "Error negotiating session\n";
+		writeprotect.unlock();
+		return false;
+	}
+
 	std::stringstream ss_payload;
 	long currenttime = time(NULL) ;
 	ss_payload << "{\"gwId\":\"" << device_id << "\",\"devId\":\"" << device_id << "\",\"uid\":\"" << device_id << "\",\"t\":\"" << currenttime << "\"}";

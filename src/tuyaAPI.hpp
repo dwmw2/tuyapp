@@ -88,6 +88,7 @@ public:
 
 	// Network methods (common implementation, ConnectToDevice virtual for protocol 3.4)
 	virtual bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5);
+	virtual bool NegotiateSession(const std::string &local_key);
 	int send(unsigned char* buffer, const unsigned int size);
 	int receive(unsigned char* buffer, const unsigned int maxsize, const unsigned int minsize = 28);
 	void disconnect();
@@ -95,6 +96,8 @@ public:
 protected:
 	int m_sockfd;
 	Protocol m_protocol;
+	std::string m_encryption_key;
+	bool m_session_established;
 	bool ResolveHost(const std::string &hostname, struct sockaddr_in& serv_addr);
 };
 
