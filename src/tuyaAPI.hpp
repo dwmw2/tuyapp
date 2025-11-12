@@ -81,6 +81,7 @@ public:
 
 	// Get protocol version
 	Protocol getProtocol() const { return m_protocol; }
+	bool isSessionEstablished() const { return m_session_established; }
 
 	// Protocol-specific methods (pure virtual)
 	virtual int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload) = 0;
