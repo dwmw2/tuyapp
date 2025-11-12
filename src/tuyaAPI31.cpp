@@ -86,21 +86,13 @@ int tuyaAPI31::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 		int encryptedSize = 0;
 		int encryptedChars = 0;
 
-		try
-		{
-			EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-			EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-			EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
-			encryptedSize = encryptedChars;
-			EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-			encryptedSize += encryptedChars;
-			EVP_CIPHER_CTX_free(ctx);
-		}
-		catch (const std::exception& e)
-		{
-			// encryption failure
-			return -1;
-		}
+		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+		EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
+		EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
+		encryptedSize = encryptedChars;
+		EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
+		encryptedSize += encryptedChars;
+		EVP_CIPHER_CTX_free(ctx);
 
 
 		unsigned char cBase64Payload[200];

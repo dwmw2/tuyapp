@@ -90,21 +90,13 @@ int tuyaAPI33::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	int encryptedSize = 0;
 	int encryptedChars = 0;
 
-	try
-	{
-		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-		EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-		EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
-		encryptedSize = encryptedChars;
-		EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-		encryptedSize += encryptedChars;
-		EVP_CIPHER_CTX_free(ctx);
-	}
-	catch (const std::exception& e)
-	{
-		// encryption failure
-		return -1;
-	}
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
+	EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
+	encryptedSize = encryptedChars;
+	EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
+	encryptedSize += encryptedChars;
+	EVP_CIPHER_CTX_free(ctx);
 
 #ifdef DEBUG
 	std::cout << "dbg: encrypted payload (size=" << encryptedSize << "): ";
@@ -190,21 +182,14 @@ std::string tuyaAPI33::DecodeTuyaMessage(unsigned char* buffer, const int size, 
 			int decryptedSize = 0;
 			int decryptedChars = 0;
 
-			try
-			{
-				EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-				EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-				EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-				decryptedSize = decryptedChars;
-				EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-				decryptedSize += decryptedChars;
-				EVP_CIPHER_CTX_free(ctx);
-				result.append((char*)cDecryptedPayload);
-			}
-			catch (const std::exception& e)
-			{
-				result.append("{\"msg\":\"error decrypting payload\"}");
-			}
+			EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+			EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
+			EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
+			decryptedSize = decryptedChars;
+			EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
+			decryptedSize += decryptedChars;
+			EVP_CIPHER_CTX_free(ctx);
+			result.append((char*)cDecryptedPayload);
 		}
 		else
 			result.append("{\"msg\":\"crc error\"}");

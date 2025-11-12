@@ -90,20 +90,13 @@ int tuyaAPI34::BuildSessionMessage(unsigned char *buffer, const uint8_t command,
 	int encryptedSize = 0;
 	int encryptedChars = 0;
 
-	try
-	{
-		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-		EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-		EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
-		encryptedSize = encryptedChars;
-		EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-		encryptedSize += encryptedChars;
-		EVP_CIPHER_CTX_free(ctx);
-	}
-	catch (const std::exception& e)
-	{
-		return -1;
-	}
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
+	EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
+	encryptedSize = encryptedChars;
+	EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
+	encryptedSize += encryptedChars;
+	EVP_CIPHER_CTX_free(ctx);
 
 	bufferpos += encryptedSize;
 	unsigned char* cMessageTrailer = &buffer[bufferpos];
@@ -148,21 +141,14 @@ std::string tuyaAPI34::DecodeSessionMessage(unsigned char* buffer, const int siz
 	int decryptedSize = 0;
 	int decryptedChars = 0;
 
-	try
-	{
-		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-		EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-		EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-		decryptedSize = decryptedChars;
-		EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-		decryptedSize += decryptedChars;
-		EVP_CIPHER_CTX_free(ctx);
-		result.append((char*)cDecryptedPayload, decryptedSize);
-	}
-	catch (const std::exception& e)
-	{
-		result.append("{\"msg\":\"error decrypting payload\"}");
-	}
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
+	EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
+	decryptedSize = decryptedChars;
+	EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
+	decryptedSize += decryptedChars;
+	EVP_CIPHER_CTX_free(ctx);
+	result.append((char*)cDecryptedPayload, decryptedSize);
 
 	delete[] cDecryptedPayload;
 	return result;
@@ -272,19 +258,12 @@ bool tuyaAPI34::NegotiateSession(const std::string &local_key)
 		xor_nonce[i] = m_local_nonce[i] ^ m_remote_nonce[i];
 
 	// Encrypt XOR'd nonce with local_key using ECB to get session key
-	try
-	{
-		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-		int outlen;
-		EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)local_key.c_str(), nullptr);
-		EVP_EncryptUpdate(ctx, m_session_key, &outlen, xor_nonce, 16);
-		EVP_EncryptFinal_ex(ctx, m_session_key + outlen, &outlen);
-		EVP_CIPHER_CTX_free(ctx);
-	}
-	catch (const std::exception& e)
-	{
-		return false;
-	}
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	int outlen;
+	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)local_key.c_str(), nullptr);
+	EVP_EncryptUpdate(ctx, m_session_key, &outlen, xor_nonce, 16);
+	EVP_EncryptFinal_ex(ctx, m_session_key + outlen, &outlen);
+	EVP_CIPHER_CTX_free(ctx);
 
 #ifdef DEBUG
 	std::cout << "dbg: Session key: ";
@@ -363,20 +342,13 @@ int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	int encryptedSize = 0;
 	int encryptedChars = 0;
 
-	try
-	{
-		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-		EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
-		EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)payload.c_str(), payloadSize);
-		encryptedSize = encryptedChars;
-		EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-		encryptedSize += encryptedChars;
-		EVP_CIPHER_CTX_free(ctx);
-	}
-	catch (const std::exception& e)
-	{
-		return -1;
-	}
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
+	EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)payload.c_str(), payloadSize);
+	encryptedSize = encryptedChars;
+	EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
+	encryptedSize += encryptedChars;
+	EVP_CIPHER_CTX_free(ctx);
 
 	bufferpos += encryptedSize;
 	unsigned char* cMessageTrailer = &buffer[bufferpos];
@@ -446,34 +418,27 @@ std::string tuyaAPI34::DecodeTuyaMessage(unsigned char* buffer, const int size, 
 			int decryptedSize = 0;
 			int decryptedChars = 0;
 
-			try
-			{
-				EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-				EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
-				EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-				decryptedSize = decryptedChars;
-				EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-				decryptedSize += decryptedChars;
-				EVP_CIPHER_CTX_free(ctx);
+			EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+			EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
+			EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
+			decryptedSize = decryptedChars;
+			EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
+			decryptedSize += decryptedChars;
+			EVP_CIPHER_CTX_free(ctx);
 
-				// Strip protocol version header (e.g., "3.4" followed by binary data)
-				// Look for the start of JSON data
-				int json_start = 0;
-				for (int i = 0; i < decryptedSize - 1; i++)
+			// Strip protocol version header (e.g., "3.4" followed by binary data)
+			// Look for the start of JSON data
+			int json_start = 0;
+			for (int i = 0; i < decryptedSize - 1; i++)
+			{
+				if (cDecryptedPayload[i] == '{')
 				{
-					if (cDecryptedPayload[i] == '{')
-					{
-						json_start = i;
-						break;
-					}
+					json_start = i;
+					break;
 				}
+			}
 
-				result.append((char*)cDecryptedPayload + json_start, decryptedSize - json_start);
-			}
-			catch (const std::exception& e)
-			{
-				result.append("{\"msg\":\"error decrypting payload\"}");
-			}
+			result.append((char*)cDecryptedPayload + json_start, decryptedSize - json_start);
 
 			delete[] cDecryptedPayload;
 		}
