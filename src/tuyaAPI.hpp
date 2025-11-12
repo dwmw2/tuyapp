@@ -82,6 +82,7 @@ public:
 	// Get protocol version
 	Protocol getProtocol() const { return m_protocol; }
 	bool isSessionEstablished() const { return m_session_established; }
+	void setEncryptionKey(const std::string &key) { m_encryption_key = key; }
 
 	// Protocol-specific methods (pure virtual)
 	virtual int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload) = 0;
