@@ -120,8 +120,17 @@ int tuyaAPI34::BuildSessionMessage(unsigned char *buffer, const uint8_t command,
 std::string tuyaAPI34::DecodeSessionMessage(unsigned char* buffer, const int size, const std::string &encryption_key)
 {
 	std::string result;
+
+	// Need at least header to read message size
+	if (size < PROTOCOL_34_HEADER_SIZE)
+		return result;
+
 	unsigned char* cTuyaResponse = buffer;
 	int messageSize = (int)((uint8_t)cTuyaResponse[15] + ((uint8_t)cTuyaResponse[14] << 8) + PROTOCOL_34_HEADER_SIZE);
+
+	// Check we have complete message
+	if (size < messageSize)
+		return result;
 
 	// Session messages have a 4-byte retcode after the header
 	unsigned char *cEncryptedPayload = &cTuyaResponse[PROTOCOL_34_HEADER_SIZE + 4];
