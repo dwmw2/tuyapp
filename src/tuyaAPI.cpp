@@ -132,5 +132,6 @@ void tuyaAPI::disconnect()
 
 bool tuyaAPI::NegotiateSession(const std::string &local_key)
 {
+	m_encryption_key = local_key;
 	return true;
 }

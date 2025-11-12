@@ -146,6 +146,8 @@ std::string tuyaAPI34::DecodeSessionMessage(unsigned char* buffer, const int siz
 
 bool tuyaAPI34::NegotiateSession(const std::string &local_key)
 {
+	m_encryption_key = local_key;
+
 #ifdef DEBUG
 	std::cout << "dbg: NegotiateSession called\n";
 #endif
@@ -289,7 +291,7 @@ bool tuyaAPI34::NegotiateSession(const std::string &local_key)
 }
 
 
-int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &szPayload, const std::string &encryption_key)
+int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &szPayload)
 {
 	if (!m_session_established)
 		return -1;
@@ -363,7 +365,7 @@ int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 }
 
 
-std::string tuyaAPI34::DecodeTuyaMessage(unsigned char* buffer, const int size, const std::string &encryption_key)
+std::string tuyaAPI34::DecodeTuyaMessage(unsigned char* buffer, const int size)
 {
 	if (!m_session_established)
 		return "{\"msg\":\"session not established\"}";

@@ -25,8 +25,8 @@ public:
 	tuyaAPI34();
 	~tuyaAPI34();
 
-	int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload, const std::string &encryption_key) override;
-	std::string DecodeTuyaMessage(unsigned char* buffer, const int size, const std::string &encryption_key) override;
+	int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload) override;
+	std::string DecodeTuyaMessage(unsigned char* buffer, const int size) override;
 
 	bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5) override;
 	bool NegotiateSession(const std::string &local_key) override;
