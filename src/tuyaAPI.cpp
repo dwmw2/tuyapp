@@ -133,7 +133,7 @@ void tuyaAPI::disconnect()
 std::string tuyaAPI::DecodeTuyaMessage(unsigned char* buffer, const int size)
 {
 	// Append new data to receive buffer
-	if (m_recv_buffer_len + size > sizeof(m_recv_buffer))
+	if ((size_t)(m_recv_buffer_len + size) > sizeof(m_recv_buffer))
 		return "{\"msg\":\"receive buffer overflow\"}";
 
 	memcpy(m_recv_buffer + m_recv_buffer_len, buffer, size);
