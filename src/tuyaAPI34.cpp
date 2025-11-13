@@ -48,6 +48,7 @@ tuyaAPI34::tuyaAPI34()
 	m_protocol = Protocol::v34;
 	m_seqno = 0;
 	m_last_response_size = 0;
+	RAND_bytes(m_local_nonce, 16);
 }
 
 tuyaAPI34::~tuyaAPI34()
@@ -56,24 +57,29 @@ tuyaAPI34::~tuyaAPI34()
 }
 
 
+void tuyaAPI34::setEncryptionKey(const std::string &key)
+{
+	m_encryption_key = key;
+	m_seqno = 0;
+	m_session_established = false;
+	RAND_bytes(m_local_nonce, 16);
+}
+
+
 int tuyaAPI34::BuildSessionMessage(unsigned char *buffer, const uint8_t command, const std::string &szPayload, const std::string &encryption_key)
 {
-	static uint32_t session_seqno = 1;
-
 	int bufferpos = 0;
 	memset(buffer, 0, PROTOCOL_34_HEADER_SIZE);
 	buffer[0] = (MESSAGE_PREFIX & 0xFF000000) >> 24;
 	buffer[1] = (MESSAGE_PREFIX & 0x00FF0000) >> 16;
 	buffer[2] = (MESSAGE_PREFIX & 0x0000FF00) >> 8;
 	buffer[3] = (MESSAGE_PREFIX & 0x000000FF);
-	buffer[4] = (session_seqno & 0xFF000000) >> 24;
-	buffer[5] = (session_seqno & 0x00FF0000) >> 16;
-	buffer[6] = (session_seqno & 0x0000FF00) >> 8;
-	buffer[7] = (session_seqno & 0x000000FF);
+	buffer[4] = (m_seqno & 0xFF000000) >> 24;
+	buffer[5] = (m_seqno & 0x00FF0000) >> 16;
+	buffer[6] = (m_seqno & 0x0000FF00) >> 8;
+	buffer[7] = (m_seqno & 0x000000FF);
 	buffer[11] = command;
 	bufferpos += (int)PROTOCOL_34_HEADER_SIZE;
-
-	session_seqno++;  // Increment by 1 for next message
 
 	unsigned char* cEncryptedPayload = &buffer[bufferpos];
 	int payloadSize = (int)szPayload.length();
@@ -158,7 +164,6 @@ std::string tuyaAPI34::DecodeSessionMessage(unsigned char* buffer, const int siz
 bool tuyaAPI34::NegotiateSession(const std::string &local_key)
 {
 	m_seqno = 0;
-	RAND_bytes(m_local_nonce, 16);
 
 	if (!tuyaAPI::NegotiateSession(local_key))
 		return false;

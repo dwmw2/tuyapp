@@ -28,6 +28,7 @@ public:
 	int BuildTuyaMessage(unsigned char *buffer, const uint8_t command, const std::string &payload) override;
 	int DecodeOneMessage(unsigned char* buffer, const int size, std::string &result) override;
 
+	void setEncryptionKey(const std::string &key) override;
 	bool ConnectToDevice(const std::string &hostname, const int portnumber, const uint8_t retries = 5) override;
 	bool NegotiateSession(const std::string &local_key) override;
 	int GetNextSessionPacket(unsigned char *buffer) override;

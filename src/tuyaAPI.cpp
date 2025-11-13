@@ -27,13 +27,13 @@
 #define SOCKET_TIMEOUT_SECS 5
 #endif
 
-tuyaAPI::tuyaAPI() : m_sockfd(0), m_session_established(false), m_recv_buffer_len(0)
+tuyaAPI::tuyaAPI() : m_sockfd(-1), m_session_established(false), m_recv_buffer_len(0)
 {
 }
 
 tuyaAPI::~tuyaAPI()
 {
-	if (m_sockfd)
+	if (m_sockfd >= 0)
 		disconnect();
 }
 
@@ -127,7 +127,7 @@ int tuyaAPI::receive(unsigned char* buffer, const unsigned int maxsize, const un
 void tuyaAPI::disconnect()
 {
 	close(m_sockfd);
-	m_sockfd = 0;
+	m_sockfd = -1;
 }
 
 std::string tuyaAPI::DecodeTuyaMessage(unsigned char* buffer, const int size)
