@@ -9,6 +9,8 @@
  *  @license GPL-3.0+ <https://github.com/gordonb3/tuyapp/blob/master/LICENSE>
  */
 
+#ifdef USE_MBEDTLS
+
 #include "tuyaAPI.hpp"
 #include <mbedtls/aes.h>
 #include <mbedtls/md.h>
@@ -77,3 +79,5 @@ void tuyaAPI::random_bytes(unsigned char *buffer, int len)
 
 	mbedtls_ctr_drbg_random(&ctr_drbg, buffer, len);
 }
+
+#endif // USE_MBEDTLS

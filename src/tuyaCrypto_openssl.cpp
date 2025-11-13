@@ -9,6 +9,8 @@
  *  @license GPL-3.0+ <https://github.com/gordonb3/tuyapp/blob/master/LICENSE>
  */
 
+#ifndef USE_MBEDTLS
+
 #include "tuyaAPI.hpp"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
@@ -63,3 +65,5 @@ void tuyaAPI::random_bytes(unsigned char *buffer, int len)
 {
 	RAND_bytes(buffer, len);
 }
+
+#endif // USE_MBEDTLS

@@ -10,6 +10,10 @@ if(ENABLE_DEBUG)
     add_definitions(-DDEBUG)
 endif()
 
+if(USE_MBEDTLS)
+    add_definitions(-DUSE_MBEDTLS)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,12 +39,7 @@ file(GLOB TUYA_demo_SRCS *.cpp)
 
 
 # Main library
-file(GLOB TUYA_client_SRCS ../src/tuyaAPI.cpp ../src/tuyaAPI31.cpp ../src/tuyaAPI33.cpp ../src/tuyaAPI34.cpp)
-if(USE_MBEDTLS)
-  list(APPEND TUYA_client_SRCS ../src/tuyaCrypto_mbedtls.cpp)
-else()
-  list(APPEND TUYA_client_SRCS ../src/tuyaCrypto_openssl.cpp)
-endif()
+file(GLOB TUYA_client_SRCS ../src/tuyaAPI.cpp ../src/tuyaAPI31.cpp ../src/tuyaAPI33.cpp ../src/tuyaAPI34.cpp ../src/tuyaCrypto_openssl.cpp ../src/tuyaCrypto_mbedtls.cpp)
 add_library(tuyapp STATIC ${TUYA_client_SRCS} ${include_SRCS})
 
 
