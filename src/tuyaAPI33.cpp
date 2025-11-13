@@ -29,10 +29,6 @@
 #include <arpa/inet.h>
 #endif
 
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
 
 #define PROTOCOL_33_HEADER_SIZE 16
 #define PROTOCOL_33_EXTRA_HEADER_SIZE 15
@@ -78,15 +74,8 @@ int tuyaAPI33::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	int payloadSize = (int)szPayload.length();
 	memset(cEncryptedPayload, 0, payloadSize + 16);
 	int encryptedSize = 0;
-	int encryptedChars = 0;
 
-	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)m_encryption_key.c_str(), nullptr);
-	EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
-	encryptedSize = encryptedChars;
-	EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-	encryptedSize += encryptedChars;
-	EVP_CIPHER_CTX_free(ctx);
+	aes_128_ecb_encrypt((unsigned char*)m_encryption_key.c_str(), (unsigned char*)szPayload.c_str(), payloadSize, cEncryptedPayload, &encryptedSize);
 
 #ifdef DEBUG
 	std::cout << "dbg: encrypted payload (size=" << encryptedSize << "): ";
@@ -166,15 +155,9 @@ int tuyaAPI33::DecodeOneMessage(unsigned char* buffer, const int size, std::stri
 	unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
 	memset(cDecryptedPayload, 0, payloadSize + 16);
 	int decryptedSize = 0;
-	int decryptedChars = 0;
 
-	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)m_encryption_key.c_str(), nullptr);
-	EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-	decryptedSize = decryptedChars;
-	EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-	decryptedSize += decryptedChars;
-	EVP_CIPHER_CTX_free(ctx);
+	aes_128_ecb_decrypt((unsigned char*)m_encryption_key.c_str(), cEncryptedPayload, payloadSize, cDecryptedPayload, &decryptedSize);
+
 	result.append((char*)cDecryptedPayload);
 	delete[] cDecryptedPayload;
 
