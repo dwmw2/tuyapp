@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16.0)
 project(tuyapp)
 
 option(ENABLE_DEBUG "Enable debugging" NO)
+option(USE_MBEDTLS "Use mbedtls instead of OpenSSL" NO)
 
 
 if(ENABLE_DEBUG)
@@ -34,7 +35,12 @@ file(GLOB TUYA_demo_SRCS *.cpp)
 
 
 # Main library
-file(GLOB_RECURSE TUYA_client_SRCS ../src/*.cpp)
+file(GLOB TUYA_client_SRCS ../src/tuyaAPI.cpp ../src/tuyaAPI31.cpp ../src/tuyaAPI33.cpp ../src/tuyaAPI34.cpp)
+if(USE_MBEDTLS)
+  list(APPEND TUYA_client_SRCS ../src/tuyaCrypto_mbedtls.cpp)
+else()
+  list(APPEND TUYA_client_SRCS ../src/tuyaCrypto_openssl.cpp)
+endif()
 add_library(tuyapp STATIC ${TUYA_client_SRCS} ${include_SRCS})
 
 
@@ -62,11 +68,22 @@ IF(OPENSSL_FOUND)
   include_directories(${OPENSSL_INCLUDE_DIR})
 ENDIF()
 
+if(USE_MBEDTLS)
+  find_package(MbedTLS REQUIRED)
+  if(MBEDTLS_FOUND)
+    message(STATUS "mbedtls library found")
+    include_directories(${MBEDTLS_INCLUDE_DIRS})
+    set(CRYPTO_LIBRARIES ${MBEDTLS_LIBRARIES})
+  endif()
+else()
+  set(CRYPTO_LIBRARIES ${OPENSSL_LIBRARIES})
+endif()
+
 
 foreach(demo ${TUYA_demo_SRCS})
   get_filename_component(exefile ${demo} NAME_WE)
   add_executable(${exefile} ${demo})
-  target_link_libraries(${exefile} tuyapp ${ZLIB_LIBRARIES} pthread ${OPENSSL_LIBRARIES})
+  target_link_libraries(${exefile} tuyapp ${ZLIB_LIBRARIES} pthread ${CRYPTO_LIBRARIES})
   message(STATUS "Created make target ${exefile}")
 endforeach(demo)
 

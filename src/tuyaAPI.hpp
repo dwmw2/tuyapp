@@ -106,6 +106,13 @@ protected:
 	unsigned char m_recv_buffer[4096];
 	int m_recv_buffer_len;
 	bool ResolveHost(const std::string &hostname, struct sockaddr_in& serv_addr);
+
+	// Crypto helper methods (implemented in tuyaCrypto_openssl.cpp or tuyaCrypto_mbedtls.cpp)
+	int aes_128_ecb_encrypt(const unsigned char *key, const unsigned char *input, int input_len, unsigned char *output, int *output_len);
+	int aes_128_ecb_decrypt(const unsigned char *key, const unsigned char *input, int input_len, unsigned char *output, int *output_len);
+	void hmac_sha256(const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *output);
+	void md5_hash(const unsigned char *data, int data_len, unsigned char *output);
+	void random_bytes(unsigned char *buffer, int len);
 };
 
 #endif

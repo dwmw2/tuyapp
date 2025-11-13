@@ -29,12 +29,6 @@
 #include <arpa/inet.h>
 #endif
 
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <openssl/rand.h>
-#include <openssl/hmac.h>
-
 
 #define PROTOCOL_34_HEADER_SIZE 16
 #define MESSAGE_PREFIX 0x000055aa
@@ -47,7 +41,7 @@ tuyaAPI34::tuyaAPI34()
 	m_protocol = Protocol::v34;
 	m_seqno = 0;
 	m_last_response_size = 0;
-	RAND_bytes(m_local_nonce, 16);
+	random_bytes(m_local_nonce, 16);
 }
 
 tuyaAPI34::~tuyaAPI34()
@@ -61,7 +55,7 @@ void tuyaAPI34::setEncryptionKey(const std::string &key)
 	m_encryption_key = key;
 	m_seqno = 0;
 	m_session_established = false;
-	RAND_bytes(m_local_nonce, 16);
+	random_bytes(m_local_nonce, 16);
 }
 
 
@@ -84,15 +78,8 @@ int tuyaAPI34::BuildSessionMessage(unsigned char *buffer, const uint8_t command,
 	int payloadSize = (int)szPayload.length();
 	memset(cEncryptedPayload, 0, payloadSize + 16);
 	int encryptedSize = 0;
-	int encryptedChars = 0;
 
-	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-	EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)szPayload.c_str(), payloadSize);
-	encryptedSize = encryptedChars;
-	EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-	encryptedSize += encryptedChars;
-	EVP_CIPHER_CTX_free(ctx);
+	aes_128_ecb_encrypt((unsigned char*)encryption_key.c_str(), (unsigned char*)szPayload.c_str(), payloadSize, cEncryptedPayload, &encryptedSize);
 
 	bufferpos += encryptedSize;
 	unsigned char* cMessageTrailer = &buffer[bufferpos];
@@ -102,9 +89,7 @@ int tuyaAPI34::BuildSessionMessage(unsigned char *buffer, const uint8_t command,
 	buffer[15] = (buffersize - PROTOCOL_34_HEADER_SIZE) & 0x000000FF;
 
 	// Calculate HMAC-SHA256
-	unsigned int hmac_len;
-	HMAC(EVP_sha256(), (unsigned char*)encryption_key.c_str(), encryption_key.length(),
-	     buffer, bufferpos, cMessageTrailer, &hmac_len);
+	hmac_sha256((unsigned char*)encryption_key.c_str(), encryption_key.length(), buffer, bufferpos, cMessageTrailer);
 
 	cMessageTrailer[32] = (MESSAGE_SUFFIX & 0xFF000000) >> 24;
 	cMessageTrailer[33] = (MESSAGE_SUFFIX & 0x00FF0000) >> 16;
@@ -144,15 +129,9 @@ std::string tuyaAPI34::DecodeSessionMessage(unsigned char* buffer, const int siz
 	unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
 	memset(cDecryptedPayload, 0, payloadSize + 16);
 	int decryptedSize = 0;
-	int decryptedChars = 0;
 
-	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)encryption_key.c_str(), nullptr);
-	EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-	decryptedSize = decryptedChars;
-	EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-	decryptedSize += decryptedChars;
-	EVP_CIPHER_CTX_free(ctx);
+	aes_128_ecb_decrypt((unsigned char*)encryption_key.c_str(), cEncryptedPayload, payloadSize, cDecryptedPayload, &decryptedSize);
+
 	result.append((char*)cDecryptedPayload, decryptedSize);
 
 	delete[] cDecryptedPayload;
@@ -197,9 +176,7 @@ int tuyaAPI34::GetNextSessionPacket(unsigned char *buffer)
 		memcpy(m_remote_nonce, response.c_str(), 16);
 
 		unsigned char hmac_check[32];
-		unsigned int hmac_check_len;
-		HMAC(EVP_sha256(), (unsigned char*)m_encryption_key.c_str(), m_encryption_key.length(),
-		     m_local_nonce, 16, hmac_check, &hmac_check_len);
+		hmac_sha256((unsigned char*)m_encryption_key.c_str(), m_encryption_key.length(), m_local_nonce, 16, hmac_check);
 
 		if (memcmp(hmac_check, (unsigned char*)response.c_str() + 16, 32) != 0)
 		{
@@ -214,12 +191,8 @@ int tuyaAPI34::GetNextSessionPacket(unsigned char *buffer)
 		for (int i = 0; i < 16; i++)
 			xor_nonce[i] = m_local_nonce[i] ^ m_remote_nonce[i];
 
-		EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
 		int outlen;
-		EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, (unsigned char*)m_encryption_key.c_str(), nullptr);
-		EVP_EncryptUpdate(ctx, m_session_key, &outlen, xor_nonce, 16);
-		EVP_EncryptFinal_ex(ctx, m_session_key + outlen, &outlen);
-		EVP_CIPHER_CTX_free(ctx);
+		aes_128_ecb_encrypt((unsigned char*)m_encryption_key.c_str(), xor_nonce, 16, m_session_key, &outlen);
 
 #ifdef DEBUG
 		std::cout << "dbg: Session key: ";
@@ -230,9 +203,7 @@ int tuyaAPI34::GetNextSessionPacket(unsigned char *buffer)
 
 		// Send second message: HMAC of remote nonce
 		unsigned char rkey_hmac[32];
-		unsigned int hmac_len;
-		HMAC(EVP_sha256(), (unsigned char*)m_encryption_key.c_str(), m_encryption_key.length(),
-		     m_remote_nonce, 16, rkey_hmac, &hmac_len);
+		hmac_sha256((unsigned char*)m_encryption_key.c_str(), m_encryption_key.length(), m_remote_nonce, 16, rkey_hmac);
 
 		m_seqno = 2;
 		m_session_established = true;
@@ -287,15 +258,8 @@ int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	int payloadSize = (int)payload.length();
 	memset(cEncryptedPayload, 0, payloadSize + 16);
 	int encryptedSize = 0;
-	int encryptedChars = 0;
 
-	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
-	EVP_EncryptUpdate(ctx, cEncryptedPayload, &encryptedChars, (unsigned char*)payload.c_str(), payloadSize);
-	encryptedSize = encryptedChars;
-	EVP_EncryptFinal_ex(ctx, cEncryptedPayload + encryptedChars, &encryptedChars);
-	encryptedSize += encryptedChars;
-	EVP_CIPHER_CTX_free(ctx);
+	aes_128_ecb_encrypt(m_session_key, (unsigned char*)payload.c_str(), payloadSize, cEncryptedPayload, &encryptedSize);
 
 	bufferpos += encryptedSize;
 	unsigned char* cMessageTrailer = &buffer[bufferpos];
@@ -305,8 +269,7 @@ int tuyaAPI34::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	buffer[15] = (buffersize - PROTOCOL_34_HEADER_SIZE) & 0x000000FF;
 
 	// Calculate HMAC-SHA256 of header + encrypted payload
-	unsigned int hmac_len;
-	HMAC(EVP_sha256(), m_session_key, 16, buffer, bufferpos, cMessageTrailer, &hmac_len);
+	hmac_sha256(m_session_key, 16, buffer, bufferpos, cMessageTrailer);
 
 	cMessageTrailer[32] = (MESSAGE_SUFFIX & 0xFF000000) >> 24;
 	cMessageTrailer[33] = (MESSAGE_SUFFIX & 0x00FF0000) >> 16;
@@ -356,8 +319,7 @@ int tuyaAPI34::DecodeOneMessage(unsigned char* buffer, const int size, std::stri
 	memcpy(hmac_sent, &buffer[messageSize - 36], 32);
 
 	unsigned char hmac_calc[32];
-	unsigned int hmac_len;
-	HMAC(EVP_sha256(), m_session_key, 16, buffer, messageSize - 36, hmac_calc, &hmac_len);
+	hmac_sha256(m_session_key, 16, buffer, messageSize - 36, hmac_calc);
 
 	if (memcmp(hmac_sent, hmac_calc, 32) != 0)
 	{
@@ -371,15 +333,8 @@ int tuyaAPI34::DecodeOneMessage(unsigned char* buffer, const int size, std::stri
 	unsigned char* cDecryptedPayload = new unsigned char[payloadSize + 16];
 	memset(cDecryptedPayload, 0, payloadSize + 16);
 	int decryptedSize = 0;
-	int decryptedChars = 0;
 
-	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), nullptr, m_session_key, nullptr);
-	EVP_DecryptUpdate(ctx, cDecryptedPayload, &decryptedChars, cEncryptedPayload, payloadSize);
-	decryptedSize = decryptedChars;
-	EVP_DecryptFinal_ex(ctx, cDecryptedPayload + decryptedSize, &decryptedChars);
-	decryptedSize += decryptedChars;
-	EVP_CIPHER_CTX_free(ctx);
+	aes_128_ecb_decrypt(m_session_key, cEncryptedPayload, payloadSize, cDecryptedPayload, &decryptedSize);
 
 	// Strip protocol version header (e.g., "3.4" followed by binary data)
 	// Look for the start of JSON data
