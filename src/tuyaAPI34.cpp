@@ -13,7 +13,6 @@
 
 #include "tuyaAPI34.hpp"
 #include <netdb.h>
-#include <zlib.h>
 #include <sstream>
 #include <iostream>
 #include <thread>
