@@ -113,6 +113,7 @@ protected:
 	void hmac_sha256(const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *output);
 	void md5_hash(const unsigned char *data, int data_len, unsigned char *output);
 	void random_bytes(unsigned char *buffer, int len);
+	unsigned int crc32(unsigned int crc, const unsigned char *data, int len);
 };
 
 #endif

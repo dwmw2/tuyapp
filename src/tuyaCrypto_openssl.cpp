@@ -15,6 +15,7 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
+#include <zlib.h>
 
 int tuyaAPI::aes_128_ecb_encrypt(const unsigned char *key, const unsigned char *input, int input_len, unsigned char *output, int *output_len)
 {
@@ -64,6 +65,11 @@ void tuyaAPI::md5_hash(const unsigned char *data, int data_len, unsigned char *o
 void tuyaAPI::random_bytes(unsigned char *buffer, int len)
 {
 	RAND_bytes(buffer, len);
+}
+
+unsigned int tuyaAPI::crc32(unsigned int crc, const unsigned char *data, int len)
+{
+	return ::crc32(crc, data, len);
 }
 
 #endif // USE_MBEDTLS

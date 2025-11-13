@@ -13,7 +13,6 @@
 
 #include "tuyaAPI31.hpp"
 #include <netdb.h>
-#include <zlib.h>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
@@ -126,8 +125,8 @@ int tuyaAPI31::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 	buffer[15] = (buffersize - PROTOCOL_31_HEADER_SIZE) & 0x000000FF;
 
 	// calculate CRC
-	unsigned long crc = crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, buffer, bufferpos) & 0xFFFFFFFF;
+	unsigned long crc = this->crc32(0, nullptr, 0);
+	crc = this->crc32(crc, buffer, bufferpos) & 0xFFFFFFFF;
 
 	// fill the message trailer
 	cMessageTrailer[0] = (crc & 0xFF000000) >> 24;
@@ -174,8 +173,8 @@ int tuyaAPI31::DecodeOneMessage(unsigned char* buffer, const int size, std::stri
 
 	// Verify CRC
 	unsigned int crc_sent = ((uint8_t)buffer[messageSize - 8] << 24) + ((uint8_t)buffer[messageSize - 7] << 16) + ((uint8_t)buffer[messageSize - 6] << 8) + (uint8_t)buffer[messageSize - 5];
-	unsigned int crc = crc32(0L, Z_NULL, 0) & 0xFFFFFFFF;
-	crc = crc32(crc, buffer, messageSize - 8) & 0xFFFFFFFF;
+	unsigned int crc = this->crc32(0, nullptr, 0) & 0xFFFFFFFF;
+	crc = this->crc32(crc, buffer, messageSize - 8) & 0xFFFFFFFF;
 
 	if (crc != crc_sent)
 	{
