@@ -71,6 +71,7 @@
 
 #include "tuyaTCP.hpp"
 #include <unistd.h>
+#include <netdb.h>
 #include <thread>
 #include <chrono>
 #include <cstring>
@@ -81,6 +82,7 @@
 #include <Ws2tcpip.h>
 #include <io.h>
 #else
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
