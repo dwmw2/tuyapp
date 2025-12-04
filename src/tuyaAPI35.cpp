@@ -109,9 +109,8 @@ int tuyaAPI35::BuildTuyaMessage(unsigned char *buffer, const uint8_t command, co
 
 	int buffersize = bufferpos;
 	int payload_len = buffersize - PROTOCOL_35_HEADER_SIZE - MESSAGE_TRAILER_SIZE;
-	buffer[14] = (payload_len & 0x0000FF00) >> 8;
-	buffer[15] = (payload_len & 0x000000FF);
-	buffer[15] = command;  // restore command byte
+	buffer[12] = (payload_len & 0x0000FF00) >> 8;
+	buffer[13] = (payload_len & 0x000000FF);
 
 #ifdef DEBUG
 	std::cout << "dbg: normal message (size=" << buffersize << "): ";
@@ -135,7 +134,7 @@ std::string tuyaAPI35::DecodeTuyaMessage(unsigned char* buffer, const int size)
 	while (bufferpos < size)
 	{
 		unsigned char* cTuyaResponse = &buffer[bufferpos];
-		int payload_len = (int)((uint8_t)cTuyaResponse[15] + ((uint8_t)cTuyaResponse[14] << 8));
+		int payload_len = (int)((uint8_t)cTuyaResponse[13] + ((uint8_t)cTuyaResponse[12] << 8));
 		int messageSize = payload_len + PROTOCOL_35_HEADER_SIZE + MESSAGE_TRAILER_SIZE;
 
 		// Extract IV (12 bytes after header)
@@ -282,9 +281,8 @@ int tuyaAPI35::BuildSessionMessage(unsigned char *buffer)
 
 	int buffersize = bufferpos;
 	int payload_len = buffersize - PROTOCOL_35_HEADER_SIZE - MESSAGE_TRAILER_SIZE;
-	buffer[14] = (payload_len & 0x0000FF00) >> 8;
-	buffer[15] = (payload_len & 0x000000FF);
-	buffer[15] = command;  // restore command
+	buffer[12] = (payload_len & 0x0000FF00) >> 8;
+	buffer[13] = (payload_len & 0x000000FF);
 
 #ifdef DEBUG
 	std::cout << "dbg: session message (size=" << buffersize << "): ";
@@ -302,7 +300,7 @@ std::string tuyaAPI35::DecodeSessionMessage(unsigned char* buffer, const int siz
 	// Decrypt the session response
 	std::string result;
 	unsigned char* cTuyaResponse = buffer;
-	int payload_len = (int)((uint8_t)cTuyaResponse[15] + ((uint8_t)cTuyaResponse[14] << 8));
+	int payload_len = (int)((uint8_t)cTuyaResponse[13] + ((uint8_t)cTuyaResponse[12] << 8));
 
 	// Extract IV
 	unsigned char iv[GCM_IV_SIZE];
