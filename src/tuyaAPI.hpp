@@ -76,7 +76,8 @@ public:
 	enum class Protocol {
 		v31,
 		v33,
-		v34
+		v34,
+		v35
 	};
 
 	virtual ~tuyaAPI() {}
@@ -99,6 +100,16 @@ public:
 	// Crypto abstraction methods (can be overridden for different crypto libraries)
 	virtual int aes_128_ecb_encrypt(const unsigned char *key, const unsigned char *input, int input_len, unsigned char *output, int *output_len);
 	virtual int aes_128_ecb_decrypt(const unsigned char *key, const unsigned char *input, int input_len, unsigned char *output, int *output_len);
+	virtual int aes_128_gcm_encrypt(const unsigned char *key, const unsigned char *iv, int iv_len,
+	                                const unsigned char *aad, int aad_len,
+	                                const unsigned char *input, int input_len,
+	                                unsigned char *output, int *output_len,
+	                                unsigned char *tag, int tag_len);
+	virtual int aes_128_gcm_decrypt(const unsigned char *key, const unsigned char *iv, int iv_len,
+	                                const unsigned char *aad, int aad_len,
+	                                const unsigned char *input, int input_len,
+	                                const unsigned char *tag, int tag_len,
+	                                unsigned char *output, int *output_len);
 	virtual void hmac_sha256(const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *output);
 	virtual void md5_hash(const unsigned char *data, int data_len, unsigned char *output);
 	virtual uint32_t crc32_compute(const unsigned char *data, int data_len);
