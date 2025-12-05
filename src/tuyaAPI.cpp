@@ -13,6 +13,7 @@
 #include "tuyaAPI31.hpp"
 #include "tuyaAPI33.hpp"
 #include "tuyaAPI34.hpp"
+#include "tuyaAPI35.hpp"
 
 #ifdef DEBUG
 #include <iostream>
@@ -26,6 +27,8 @@ tuyaAPI* tuyaAPI::create(const std::string &version)
 		return new tuyaAPI33();
 	if (version == "3.4")
 		return new tuyaAPI34();
+	if (version == "3.5")
+		return new tuyaAPI35();
 	return nullptr;
 }
 

@@ -121,7 +121,9 @@ int main(int argc, char *argv[])
 	ss_payload << "{\"gwId\":\"" << device_id << "\",\"devId\":\"" << device_id << "\",\"uid\":\"" << device_id << "\",\"t\":\"" << currenttime << "\"}";
 	std::string payload = ss_payload.str();
 
-	int payload_len = tuyaclient->BuildTuyaMessage(message_buffer, TUYA_DP_QUERY, payload);
+	int payload_len = tuyaclient->BuildTuyaMessage(message_buffer,
+						       (tuyaclient->getProtocol() >= tuyaAPI::Protocol::v35) ? TUYA_DP_QUERY_NEW : TUYA_DP_QUERY,
+						       payload);
 
 	int numbytes;
 	numbytes = tuyaclient->send(message_buffer, payload_len);

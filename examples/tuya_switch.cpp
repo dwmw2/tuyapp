@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	ss_payload.str(std::string());
 
 	// Protocol 3.4 uses different payload format
-	if (tuyaclient->getProtocol() == tuyaAPI::Protocol::v34)
+	if (tuyaclient->getProtocol() >= tuyaAPI::Protocol::v34)
 	{
 		ss_payload << "{\"protocol\":5,\"t\":" << currenttime << ",\"data\":{\"dps\":{\"1\":";
 		if (switchstate)
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 #endif
 
 	payload_len = tuyaclient->BuildTuyaMessage(message_buffer,
-		(tuyaclient->getProtocol() == tuyaAPI::Protocol::v34) ? TUYA_CONTROL_NEW : TUYA_CONTROL,
+		(tuyaclient->getProtocol() >= tuyaAPI::Protocol::v34) ? TUYA_CONTROL_NEW : TUYA_CONTROL,
 		payload);
 
 #ifdef APPDEBUG
