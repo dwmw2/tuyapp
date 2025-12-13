@@ -1,0 +1,23 @@
+{
+  "name": "TuyApp",
+  "version": "1.0.0",
+  "description": "Tuya application protocol implementation",
+  "keywords": ["tuya", "iot", "protocol"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dwmw2/tuyapp.git"
+  },
+  "authors": [
+    {
+      "name": "David Woodhouse",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": ["arduino", "espidf"],
+  "platforms": ["espressif32", "espressif8266", "rp2040"],
+  "build": {
+    "includeDir": "include",
+    "srcDir": "src"
+  }
+}

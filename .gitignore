@@ -12,6 +12,7 @@ tests
 tuya_*
 simple_*
 *.json
+!library.json
 !*.cpp
 !*.hpp
 !*.h
