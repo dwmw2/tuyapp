@@ -18,6 +18,10 @@
   "platforms": ["espressif32", "espressif8266", "rp2040"],
   "build": {
     "includeDir": "src",
-    "srcDir": "src"
+    "srcDir": "src",
+    "srcFilter": [
+      "+<*.cpp>",
+      "+<*.c>"
+    ]
   }
 }
