@@ -107,7 +107,7 @@ public:
 	Tuya::TCP::Socket::value getSocketState();
 
 	virtual bool ConnectToDevice(const std::string &hostname);
-	int send(unsigned char* buffer, const int size);
+	virtual int send(unsigned char* buffer, const int size);
 	int receive(unsigned char* buffer, const int maxsize, const int minsize = 30);
 	int getlasterror();
 	void disconnect();
