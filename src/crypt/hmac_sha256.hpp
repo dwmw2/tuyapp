@@ -12,6 +12,16 @@
  *  @license GPL-3.0+ <https://github.com/gordonb3/tuyapp/blob/master/LICENSE>
  */
 
+
+#ifdef USE_EXTERNAL_HMAC_SHA256
+
+// The application provides this primitive
+namespace Tuya {
+void hmac_sha256(const unsigned char *cEncryptionKey, int keySize, const unsigned char *cInputBuffer, int inputSize, unsigned char *cOutputBuffer);
+}; // namespace Tuya
+
+#else // USE_EXTERNAL_HMAC_SHA256
+
 #ifndef USE_MBEDTLS
 
 // select default encryption routines
@@ -60,3 +70,5 @@ static void hmac_sha256(const unsigned char *cEncryptionKey, int keySize, const 
 }; // namespace Tuya
 
 
+
+#endif // USE_EXTERNAL_HMAC_SHA256

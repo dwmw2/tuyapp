@@ -12,6 +12,16 @@
  *  @license GPL-3.0+ <https://github.com/gordonb3/tuyapp/blob/master/LICENSE>
  */
 
+
+#ifdef USE_EXTERNAL_RAND
+
+// The application provides this primitive
+namespace Tuya {
+void random_bytes(unsigned char *buffer, int len);
+}; // namespace Tuya
+
+#else // USE_EXTERNAL_RAND
+
 #ifndef USE_MBEDTLS
 
 // select default encryption routines
@@ -53,3 +63,5 @@ static void random_bytes(unsigned char *buffer, int len)
 
 
 
+
+#endif // USE_EXTERNAL_RAND

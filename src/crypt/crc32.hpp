@@ -12,6 +12,18 @@
  *  @license GPL-3.0+ <https://github.com/gordonb3/tuyapp/blob/master/LICENSE>
  */
 
+
+#ifdef USE_EXTERNAL_CRC32
+
+// The application provides this primitive
+#include <cstdint>
+
+namespace Tuya {
+unsigned long crc32(unsigned long crc, uint8_t const data[], uint32_t const len);
+}; // namespace Tuya
+
+#else // USE_EXTERNAL_CRC32
+
 #ifndef _tuyaCRC
 #define _tuyaCRC
 
@@ -65,3 +77,5 @@ static unsigned long crc32(unsigned long crc, uint8_t const data[], uint32_t con
 }; // namespace Tuya
 
 #endif
+
+#endif // USE_EXTERNAL_CRC32

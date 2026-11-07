@@ -13,6 +13,17 @@
  */
 
 
+#ifdef USE_EXTERNAL_AES_ECB
+
+// The application provides this primitive
+namespace Tuya {
+bool aes_128_ecb_encrypt(const unsigned char *cEncryptionKey, const unsigned char *cInputBuffer, int inputSize, unsigned char *cOutputBuffer, int *outputSize);
+bool aes_128_ecb_decrypt(const unsigned char *cEncryptionKey, const unsigned char *cInputBuffer, int inputSize, unsigned char *cOutputBuffer, int *outputSize);
+}; // namespace Tuya
+
+#else // USE_EXTERNAL_AES_ECB
+
+
 #ifndef USE_MBEDTLS
 
 // select default encryption routines
@@ -148,3 +159,5 @@ static bool aes_128_ecb_decrypt(const unsigned char *cEncryptionKey, const unsig
 
 }; // namespace Tuya
 
+
+#endif // USE_EXTERNAL_AES_ECB

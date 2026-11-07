@@ -13,6 +13,17 @@
  */
 
 
+#ifdef USE_EXTERNAL_AES_GCM
+
+// The application provides this primitive
+namespace Tuya {
+bool aes_128_gcm_encrypt(const unsigned char *cEncryptionKey, const unsigned char *iv, int iv_len, const unsigned char *aad, int aad_len, const unsigned char *cInputBuffer, int inputSize, unsigned char *cOutputBuffer, int *outputSize, unsigned char *tag, int tag_len);
+bool aes_128_gcm_decrypt(const unsigned char *cEncryptionKey, const unsigned char *iv, int iv_len, const unsigned char *aad, int aad_len, const unsigned char *cInputBuffer, int inputSize, const unsigned char *tag, int tag_len, unsigned char *cOutputBuffer, int *outputSize);
+}; // namespace Tuya
+
+#else // USE_EXTERNAL_AES_GCM
+
+
 #ifndef USE_MBEDTLS
 
 // select default encryption routines
@@ -149,3 +160,5 @@ static bool aes_128_gcm_decrypt(const unsigned char *cEncryptionKey, const unsig
 }; // namespace Tuya
 
 
+
+#endif // USE_EXTERNAL_AES_GCM
