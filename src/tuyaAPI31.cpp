@@ -114,8 +114,7 @@ int tuyaAPI31::BuildTuyaMessage(unsigned char *cMessageBuffer, const uint8_t com
 	cMessageBuffer[15] = (buffersize - PROTOCOL_31_HEADER_SIZE) & 0x000000FF;
 
 	// calculate CRC
-	unsigned long crc = crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, cMessageBuffer, bufferpos) & 0xFFFFFFFF;
+	unsigned long crc = crc32(0L, cMessageBuffer, bufferpos) & 0xFFFFFFFF;
 
 	// fill the message trailer
 	cMessageTrailer[0] = (crc & 0xFF000000) >> 24;
@@ -163,8 +162,7 @@ std::string tuyaAPI31::DecodeTuyaMessage(unsigned char* cMessageBuffer, const in
 
 		// verify crc
 		unsigned int crc_sent = ((uint8_t)cTuyaResponse[messageSize - 8] << 24) + ((uint8_t)cTuyaResponse[messageSize - 7] << 16) + ((uint8_t)cTuyaResponse[messageSize - 6] << 8) + (uint8_t)cTuyaResponse[messageSize - 5];
-		unsigned int crc = crc32(0L, Z_NULL, 0) & 0xFFFFFFFF;
-		crc = crc32(crc, cTuyaResponse, messageSize - 8) & 0xFFFFFFFF;
+		unsigned int crc = crc32(0L, cTuyaResponse, messageSize - 8) & 0xFFFFFFFF;
 
 		if (crc == crc_sent)
 		{

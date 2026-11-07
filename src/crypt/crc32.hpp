@@ -15,7 +15,6 @@
 #ifndef _tuyaCRC
 #define _tuyaCRC
 
-#define Z_NULL 0
 
 namespace Tuya {
 
