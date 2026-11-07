@@ -1,0 +1,26 @@
+{
+  "name": "tuyapp",
+  "version": "1.0.0",
+  "description": "Client interface for local Tuya device access (protocol 3.1-3.5)",
+  "keywords": ["tuya", "iot", "protocol"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gordonb3/tuyapp.git"
+  },
+  "authors": [
+    {
+      "name": "Gordon Bos",
+      "maintainer": true
+    }
+  ],
+  "license": "GPL-3.0-or-later",
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "includeDir": "src",
+    "srcDir": "src",
+    "srcFilter": [
+      "+<*.cpp>"
+    ]
+  }
+}
