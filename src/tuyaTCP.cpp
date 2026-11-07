@@ -68,6 +68,12 @@
  *	@license GPL-3.0+ <https://github.com/gordonb3/tuyapp/blob/master/LICENSE>
  */
 
+// With USE_EXTERNAL_TCP the application provides the tuyaTCP member
+// definitions, running the protocol over its own connection: send() is
+// virtual for per-instance routing, and the receive side already takes
+// caller buffers via NegotiateSessionFinalize() and DecodeTuyaMessage().
+#ifndef USE_EXTERNAL_TCP
+
 #define SOCKET_CONNECT_TIMEOUT_SECS 5
 #define SOCKET_RECEIVE_TIMEOUT_SECS 2
 
@@ -429,3 +435,4 @@ void tuyaTCP::disconnect()
 	return -1;
 }
 
+#endif // USE_EXTERNAL_TCP
